@@ -15,20 +15,19 @@ import logger from "./logger";
 
 dotenv.config();
 
-async function main() {
-  const isEnv = (ENV: (string | undefined)[]): string[] => {
-    const env = ENV.map((v, i) => {
-      if (!v) {
-        throw new Error("環境変数が設定されていません");
-      }
+const isEnv = (ENV: (string | undefined)[]): string[] => {
+  const env = ENV.map((v) => {
+    if (!v) {
+      throw new Error("環境変数が設定されていません");
+    }
 
-      return v;
-    });
+    return v;
+  });
 
-    return env;
-  };
+  return env;
+};
 
-
+const main = async () => {
   const [notionToken, databaseId, myName, lineToken] = isEnv([
     process.env.NOTION_TOKEN,
     process.env.DATABASE_ID,
@@ -42,9 +41,9 @@ async function main() {
 
   const today = DateTime.now().setZone("Asia/Tokyo").toFormat("yyyy-LL-dd");
 
-  const myUserId = await getAllUsers(notionToken).then((users) => {
-    return getMyUserId(myName, users);
-  });
+  const myUserId = await getAllUsers(notionToken).then((users) =>
+    getMyUserId(myName, users)
+  );
 
   const notionDatabaseQuery: QueryDatabaseParameters = {
     database_id: databaseId,
@@ -66,7 +65,10 @@ async function main() {
     },
   };
 
-  //FIXME: zip関数の時undefinedをなくす方法ないだろうか
+  type ScheduleTime = string;
+  type ScheduleTitle = string;
+  type ScheduleLink = string;
+
   const schedule = (await notion.databases
     .query(notionDatabaseQuery)
     .then((s) => {
@@ -75,7 +77,7 @@ async function main() {
         getMyScheduleTitle(s),
         getMyScheduleLink(s)
       );
-    })) as string[][][];
+    })) as [ScheduleTime, ScheduleTitle, ScheduleLink][];
 
   schedule.sort((a, b) => {
     if (a[0] > b[0]) {
@@ -104,7 +106,7 @@ async function main() {
 
   //line
   await linePost(message, lineToken);
-}
+};
 
 main()
   .then(() => {
